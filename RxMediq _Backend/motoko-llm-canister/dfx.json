@@ -1,0 +1,13 @@
+{
+  "canisters": {
+    "project_backend": {
+      "main": "src/project_backend/main.mo",
+      "type": "motoko"
+    },
+    "mock_llm": {
+      "main": "src/mock_llm.mo",
+      "type": "motoko"
+    }
+  },
+  "version": 1
+}
