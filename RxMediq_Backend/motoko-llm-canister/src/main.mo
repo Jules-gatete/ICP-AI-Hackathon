@@ -4,6 +4,7 @@ import List "mo:base/List";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Principal "mo:base/Principal";
 
 actor HealthSystem {
   // Types
@@ -32,8 +33,8 @@ actor HealthSystem {
   private stable var userEntries : [(UserId, UserProfile)] = [];
   private var users : HashMap.HashMap<UserId, UserProfile> = HashMap.HashMap(10, Text.equal, Text.hash);
 
-  // Mock LLM actor with correct canister ID
-  private let mockLLM = actor "bd3sg-teaaa-aaaaa-qaaba-cai" : actor {
+  // Mock LLM actor reference
+  private let mockLLM = actor "bkyz2-fmaaa-aaaaa-qaaaq-cai" : actor {
     generate(prompt : Text) : async Text;
   };
 

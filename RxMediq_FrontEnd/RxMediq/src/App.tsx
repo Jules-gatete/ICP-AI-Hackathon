@@ -80,6 +80,9 @@ function AppContent() {
         </Routes>
       </Suspense>
       <Toaster position="top-right" />
+      <div className="text-center text-gray-500 mt-4">
+        Debug: App is rendering
+      </div>
     </div>
   );
 }

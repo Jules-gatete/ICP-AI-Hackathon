@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import projectBackend from '../canister'; // Import the backend canister actor
+import toast from 'react-hot-toast';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -16,23 +16,12 @@ export const Login: React.FC = () => {
     setError(null);
 
     try {
-      // Check if the user exists in the backend
-      const userData = await projectBackend.getUserData(username);
-
-      if (!userData) {
-        // If the user does not exist, create a new user
-        const response = await projectBackend.createUser(username, username, 30, 'Low-Income'); // Adjust age and financial status as needed
-        if (response !== 'User created successfully!') {
-          throw new Error(response);
-        }
-      }
-
-      // Log the user in
       await login(username);
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
       setError('Failed to log in. Please try again.');
+      toast.error('Failed to log in. Please check your username.');
     }
   };
 
@@ -90,3 +79,6 @@ export const Login: React.FC = () => {
     </div>
   );
 };
+
+// Add default export for React.lazy
+export default Login;

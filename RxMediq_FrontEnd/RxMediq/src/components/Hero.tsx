@@ -14,7 +14,7 @@ export const Hero: React.FC = () => {
   const [features, setFeatures] = useState<Feature[]>([]);
 
   useEffect(() => {
-    // Simulate fetching features from a backend or configuration file
+    console.log('Hero: Fetching features...');
     const fetchFeatures = async () => {
       const fetchedFeatures = [
         {
@@ -39,6 +39,7 @@ export const Hero: React.FC = () => {
     fetchFeatures();
   }, []);
 
+  console.log('Hero: Rendering with features:', features);
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4">
@@ -92,7 +93,13 @@ export const Hero: React.FC = () => {
             </motion.div>
           ))}
         </div>
+        <div className="text-center text-gray-500 mt-4">
+          Debug: Hero is rendering
+        </div>
       </div>
     </section>
   );
 };
+
+// Add default export for React.lazy
+export default Hero;

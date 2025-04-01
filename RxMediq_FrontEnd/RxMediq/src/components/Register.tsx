@@ -2,40 +2,36 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import projectBackend from '../canister'; // Import the backend canister actor
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     username: '',
     name: '',
     age: '',
-    financialStatus: 'Low-Income'
+    financialStatus: 'Low-Income',
   });
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     try {
-      // Call the backend's `createUser` method
-      const response = await projectBackend.createUser(
+      await register(
         formData.username,
         formData.name,
         parseInt(formData.age),
         formData.financialStatus
       );
-
-      if (response !== 'User created successfully!') {
-        throw new Error(response);
-      }
-
-      // Navigate to the dashboard after successful registration
       navigate('/dashboard');
     } catch (err) {
       console.error('Registration error:', err);
       setError('Failed to register. Please try again.');
+      toast.error('Failed to register. Please try again.');
     }
   };
 
@@ -59,7 +55,7 @@ export const Register: React.FC = () => {
             <input
               type="text"
               value={formData.username}
-              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -72,7 +68,7 @@ export const Register: React.FC = () => {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -85,7 +81,7 @@ export const Register: React.FC = () => {
             <input
               type="number"
               value={formData.age}
-              onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -97,7 +93,7 @@ export const Register: React.FC = () => {
             </label>
             <select
               value={formData.financialStatus}
-              onChange={(e) => setFormData(prev => ({ ...prev, financialStatus: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, financialStatus: e.target.value }))}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
             >
               <option value="Low-Income">Low Income</option>
@@ -134,3 +130,6 @@ export const Register: React.FC = () => {
     </div>
   );
 };
+
+// Add default export for React.lazy
+export default Register;

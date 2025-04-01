@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, FileText } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import type { MedicalRecord } from '../types';
-import projectBackend from '../canister'; // Import the backend canister actor
+import projectBackend from '../canister';
 
 export const MedicalHistory: React.FC = () => {
+  const { user } = useAuth(); // Get the authenticated user
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [newRecord, setNewRecord] = useState<Partial<MedicalRecord>>({
     date: new Date().toISOString().split('T')[0],
     symptoms: [],
-    medications: []
+    medications: [],
   });
   const [loading, setLoading] = useState(false);
 
-  const userId = 'user123'; // Replace with the actual user ID
+  const userId = user?.id || ''; // Use the authenticated user's ID
 
   // Fetch medical history from the backend
   useEffect(() => {
+    if (!userId) return;
+
     const fetchMedicalHistory = async () => {
       setLoading(true);
       try {
-        const userData = await projectBackend.getUserData(userId);
-        if (userData && userData.medicalHistory) {
-          setRecords(userData.medicalHistory.map((history: string, index: number) => ({
-            id: index.toString(),
-            date: new Date().toISOString().split('T')[0], // Replace with actual date if available
-            condition: history,
-            symptoms: [],
-            medications: [],
-            notes: ''
-          })));
+        const userDataResponse = await projectBackend.getUserData(userId);
+        if ('ok' in userDataResponse) {
+          const userData = userDataResponse.ok;
+          setRecords(
+            (userData.medicalHistory || []).map((history: string, index: number) => ({
+              id: index.toString(),
+              date: new Date().toISOString().split('T')[0], // Replace with actual date if available
+              condition: history,
+              symptoms: userData.symptoms || [],
+              medications: [], // Add if backend supports medications
+              notes: '',
+            }))
+          );
+        } else {
+          console.error('Error fetching user data:', userDataResponse.err);
         }
       } catch (error) {
         console.error('Error fetching medical history:', error);
@@ -44,32 +53,40 @@ export const MedicalHistory: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newRecord.condition && newRecord.date) {
-      try {
-        // Add the new record to the backend
-        const response = await projectBackend.addMedicalHistory(userId, newRecord.condition);
-        if (response === 'Medical history updated!') {
-          setRecords(prev => [...prev, {
-            ...newRecord as MedicalRecord,
+    if (!userId || !newRecord.condition || !newRecord.date) return;
+
+    try {
+      // Add the new medical history record to the backend
+      const response = await projectBackend.addMedicalHistory(userId, newRecord.condition);
+      if (response === 'Medical history updated!') {
+        setRecords((prev) => [
+          ...prev,
+          {
+            ...newRecord,
             id: Date.now().toString(),
             symptoms: newRecord.symptoms || [],
-            medications: newRecord.medications || []
-          }]);
-          setShowForm(false);
-          setNewRecord({
-            date: new Date().toISOString().split('T')[0],
-            symptoms: [],
-            medications: []
-          });
-        } else {
-          console.error('Failed to update medical history:', response);
+            medications: newRecord.medications || [],
+          } as MedicalRecord,
+        ]);
+        // Add symptoms if provided
+        if (newRecord.symptoms && newRecord.symptoms.length > 0) {
+          await projectBackend.addSymptoms(userId, newRecord.symptoms);
         }
-      } catch (error) {
-        console.error('Error adding medical history:', error);
+        setShowForm(false);
+        setNewRecord({
+          date: new Date().toISOString().split('T')[0],
+          symptoms: [],
+          medications: [],
+        });
+      } else {
+        console.error('Failed to update medical history:', response);
       }
+    } catch (error) {
+      console.error('Error adding medical history:', error);
     }
   };
 
+  // Rest of the component remains the same...
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -108,7 +125,7 @@ export const MedicalHistory: React.FC = () => {
                 <input
                   type="date"
                   value={newRecord.date}
-                  onChange={e => setNewRecord(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(e) => setNewRecord((prev) => ({ ...prev, date: e.target.value }))}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                   required
                 />
@@ -120,7 +137,7 @@ export const MedicalHistory: React.FC = () => {
                 <input
                   type="text"
                   value={newRecord.condition || ''}
-                  onChange={e => setNewRecord(prev => ({ ...prev, condition: e.target.value }))}
+                  onChange={(e) => setNewRecord((prev) => ({ ...prev, condition: e.target.value }))}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                   required
                 />
@@ -132,10 +149,12 @@ export const MedicalHistory: React.FC = () => {
                 <input
                   type="text"
                   value={newRecord.symptoms?.join(', ') || ''}
-                  onChange={e => setNewRecord(prev => ({ 
-                    ...prev, 
-                    symptoms: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                  }))}
+                  onChange={(e) =>
+                    setNewRecord((prev) => ({
+                      ...prev,
+                      symptoms: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                    }))
+                  }
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
               </div>
@@ -146,10 +165,12 @@ export const MedicalHistory: React.FC = () => {
                 <input
                   type="text"
                   value={newRecord.medications?.join(', ') || ''}
-                  onChange={e => setNewRecord(prev => ({ 
-                    ...prev, 
-                    medications: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                  }))}
+                  onChange={(e) =>
+                    setNewRecord((prev) => ({
+                      ...prev,
+                      medications: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                    }))
+                  }
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
               </div>
@@ -159,7 +180,7 @@ export const MedicalHistory: React.FC = () => {
                 </label>
                 <textarea
                   value={newRecord.notes || ''}
-                  onChange={e => setNewRecord(prev => ({ ...prev, notes: e.target.value }))}
+                  onChange={(e) => setNewRecord((prev) => ({ ...prev, notes: e.target.value }))}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                   rows={4}
                 />
@@ -185,7 +206,7 @@ export const MedicalHistory: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 gap-6">
-        {records.map(record => (
+        {records.map((record) => (
           <motion.div
             key={record.id}
             initial={{ opacity: 0 }}
